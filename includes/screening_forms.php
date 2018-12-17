@@ -21,7 +21,7 @@ function screening(){
     
     # start the html form
     print '<form method="post" id="redcap_screening_form">';
-
+    print "<span style=\"display: none; color: #DC143C;\" class='redcap_errors' id='confirmation_message' ></span>";
     # hidden input value for POST detection later
     print '<input type="hidden" name="screening_form"/>';
 
@@ -69,7 +69,7 @@ function screening(){
     }
 
     print '<input type="hidden" name="redcap_screening_nonce" value="'. wp_create_nonce("redcap-screening-nonce") . '" />';
-    print '<input type="submit" value="Submit"/>';
+    print '<input type="submit" value="Next"/>';
 
 print '</form>';
 
@@ -105,6 +105,10 @@ function add_screening_info() {
 
             if (array_key_exists("count", $response)) {
                 $_SESSION["dogs"] += 1;
+
+                redcap_errors()->add("confirmation_message", __($_POST["dog_name"] . "'s information submitted"));
+                $GLOBALS['submission_errors'] = TRUE;
+                
             } elseif (array_key_exists("error", $response)){
                 handle_errors($response);
             } else {
@@ -127,7 +131,13 @@ function add_screening_info() {
             
                 if (array_key_exists("count", $response)) {
                     $_SESSION["dogs"] = 1;
+                    $_SESSION["num_dogs"] = $_POST["num_dogs_hh"];
                     $_SESSION["study_id"] = $_POST["study_id"];
+
+                    redcap_errors()->add("confirmation_message", __("Personal information submitted"));
+
+                    $GLOBALS['submission_errors'] = TRUE;
+                    
                 } elseif (array_key_exists("error", $response)){
                     handle_errors($response);
                 } else {
