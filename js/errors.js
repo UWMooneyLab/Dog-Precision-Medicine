@@ -1,6 +1,5 @@
 
 
-
 function show_errors(variable_name, error_message) {
     
     document.getElementById(variable_name).style.display = "block";

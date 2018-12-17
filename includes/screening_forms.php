@@ -9,6 +9,7 @@ function screening(){
 
     # depending on the presence of "dog" one of the form's survey info will be
     # pulled from REDCap, via the redcap_api file.
+
 	if(!isset($_SESSION["dogs"])){
         $current_view = "personal_info";
         $survey_info = get_screening_form("screening_about_you");
@@ -17,66 +18,72 @@ function screening(){
         $survey_info = get_screening_form("screening_about_dog");
     }
 
-    $num_fields = count($survey_info);
-    
-    # start the html form
-    print '<form method="post" id="redcap_screening_form">';
-    print "<span style=\"display: none; color: #DC143C;\" class='redcap_errors' id='confirmation_message' ></span>";
-    # hidden input value for POST detection later
-    print '<input type="hidden" name="screening_form"/>';
+    if ($_SESSION["dogs"] > $_SESSION["num_dogs"]) {
+        print "<span>Thank you for your participation</span>";
+    } else {
 
-    # start adding the fields and input types from the survey
-    foreach (range(0, $num_fields-1) as $num) {
-        if ($survey_info[$num]["field_name"]!="study_id" && $survey_info[$num]["field_name"]!="record_id"){
+        $num_fields = count($survey_info);
+        
+        print "<span style=\"display: none; color: #DC143C; margin-bottom: 15px; border: 1px solid #DC143C; padding: 2px; border-radius: 5px; text-align: center;\" class='redcap_errors' id='error_confirmation_message' ></span>";
 
-            # outputs the label for the input form
-            print($survey_info[$num]["field_label"]);
-            print "<span style=\"display: none; color: #DC143C;\" class='redcap_errors' id='error_". $survey_info[$num]["field_name"] ."' ></span>";
-            print ("<br id='error_break'>");
+        # start the html form
+        print '<form method="post" id="redcap_screening_form">';
+        
+        # hidden input value for POST detection later
+        print '<input type="hidden" name="screening_form"/>';
 
-            # This series of if elseif decides how to present the input forms depending
-            # on the meta data. Currently handles, text, dropdown, radio, and yesno.
-            # This will need to be expanded for all possible input variations from redcap.
+        # start adding the fields and input types from the survey
+        foreach (range(0, $num_fields-1) as $num) {
+            if ($survey_info[$num]["field_name"]!="study_id" && $survey_info[$num]["field_name"]!="record_id"){
 
-            # handles simple text input
-            if($survey_info[$num]["field_type"]=="text"){
-                echo '<input name="'. $survey_info[$num]["field_name"] .'" type="text">';
-            
-            # handles dropdown and radio input. This just uses the HTML selector dropdown menus
-            } elseif ($survey_info[$num]["field_type"]=="dropdown" || $survey_info[$num]["field_type"]=="radio") {
+                # outputs the label for the input form
+                print($survey_info[$num]["field_label"]);
+                print "<span style=\"display: none; color: #DC143C;\" class='redcap_errors' id='error_". $survey_info[$num]["field_name"] ."' ></span>";
+                print ("<br id='error_break'>");
 
-                $options = explode( "|", $survey_info[$num]["select_choices_or_calculations"]);
+                # This series of if elseif decides how to present the input forms depending
+                # on the meta data. Currently handles, text, dropdown, radio, and yesno.
+                # This will need to be expanded for all possible input variations from redcap.
+
+                # handles simple text input
+                if($survey_info[$num]["field_type"]=="text"){
+                    echo '<input name="'. $survey_info[$num]["field_name"] .'" type="text">';
                 
-                print '<select name="'. $survey_info[$num]["field_name"] .'">';
-                foreach(range(0, count($options)-1) as $opt) {
+                # handles dropdown and radio input. This just uses the HTML selector dropdown menus
+                } elseif ($survey_info[$num]["field_type"]=="dropdown" || $survey_info[$num]["field_type"]=="radio") {
+
+                    $options = explode( "|", $survey_info[$num]["select_choices_or_calculations"]);
                     
-                    $value = explode(", ", $options[$opt])[0];
-                    $label = explode(", ", $options[$opt])[1];
-                    print '<option value='. $value .'>'. $label .'</option>';
-                    
+                    print '<select name="'. $survey_info[$num]["field_name"] .'">';
+                    foreach(range(0, count($options)-1) as $opt) {
+                        
+                        $value = explode(", ", $options[$opt])[0];
+                        $label = explode(", ", $options[$opt])[1];
+                        print '<option value='. $value .'>'. $label .'</option>';
+                        
+                    }
+                    print '</select><br>';
+                
+                # handles the yesno option from redcap. Just creates a dropdown menu.
+                } elseif ($survey_info[$num]["field_type"]=="yesno") {
+                    print '<select name="'. $survey_info[$num]["field_name"] .'">';
+                        print '<option value="1">Yes</option>';
+                        print '<option value="0">No</option>';
+                    print '</select><br>';
                 }
-                print '</select><br>';
-            
-            # handles the yesno option from redcap. Just creates a dropdown menu.
-            } elseif ($survey_info[$num]["field_type"]=="yesno") {
-                print '<select name="'. $survey_info[$num]["field_name"] .'">';
-                    print '<option value="1">Yes</option>';
-                    print '<option value="0">No</option>';
-                print '</select><br>';
+                print "<br>";
             }
-            print "<br>";
         }
+
+        print '<input type="hidden" name="redcap_screening_nonce" value="'. wp_create_nonce("redcap-screening-nonce") . '" />';
+        print '<input type="submit" value="Next"/>';
+
+    print '</form>';
+
+    # listening for errors in submission process
+    # shows the error messages to the user
+    monitor_errors();
     }
-
-    print '<input type="hidden" name="redcap_screening_nonce" value="'. wp_create_nonce("redcap-screening-nonce") . '" />';
-    print '<input type="submit" value="Next"/>';
-
-print '</form>';
-
-# listening for errors in submission process
-# shows the error messages to the user
-monitor_errors();
-
 }
 add_shortcode('screening_form', 'screening');
 
@@ -108,7 +115,7 @@ function add_screening_info() {
 
                 redcap_errors()->add("confirmation_message", __($_POST["dog_name"] . "'s information submitted"));
                 $GLOBALS['submission_errors'] = TRUE;
-                
+
             } elseif (array_key_exists("error", $response)){
                 handle_errors($response);
             } else {
@@ -166,8 +173,8 @@ function monitor_errors() {
     
                 echo '<head>',
                 
-                        '<script type="text/javascript" src="/wp-content/plugins/REDCapToWordPress Dog Project/js/src/jquery-3.2.0.js"></script>',
-                        '<script type="text/javascript" src="/wp-content/plugins/REDCapToWordPress Dog Project/js/errors.js"></script>',
+                        '<script type="text/javascript" src="/wp-content/plugins/Dog-Precision-Medicine/js/src/jquery-3.2.0.js"></script>',
+                        '<script type="text/javascript" src="/wp-content/plugins/Dog-Precision-Medicine/js/errors.js"></script>',
                     '</head>',
                     '<body>',
                             '<script type="text/javascript">',
