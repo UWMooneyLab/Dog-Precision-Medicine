@@ -18,8 +18,8 @@ function screening(){
         $survey_info = get_screening_form("screening_about_dog");
     }
 
-    if ($_SESSION["dogs"] > $_SESSION["num_dogs"]) {
-        print "<span>Thank you for your participation</span>";
+    if(isset($_SESSION["dogs"]) && ($_SESSION["dogs"] > $_SESSION["num_dogs"])) {
+            print "<span>Thank you for your participation</span>";
     } else {
 
         $num_fields = count($survey_info);

@@ -34,6 +34,27 @@ register_activation_hook( __FILE__, 'activate_redcap' );
 register_uninstall_hook(__FILE__, 'uninstall_redcap' );
 
 
+add_action('admin_menu', 'redcap_to_wordpress_menu');
+
+function redcap_to_wordpress_menu() {
+    add_menu_page( 'REDCap', "REDCap", 'manage_options', 'redcap_plugin', 'redcap_init');
+}
+
+function redcap_init() {
+    ?>
+    <form method="post">
+        <p>REDCap API Token</p>
+        <input type='text' id='token'>
+        <br><br>
+        <p>REDCap API URL</p>
+        <input type='text' id="url">
+    </form>
+
+
+    <?php
+}
+
+
 // deletes the user from the wp_redcap database when a user is deleted on the wordpress site.
 // RedCap records are not deleted or altered.
 function delete_user_from_redcap( $user_id ) {
